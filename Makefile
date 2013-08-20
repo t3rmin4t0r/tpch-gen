@@ -1,22 +1,22 @@
 
-all: target/lib/dsdgen.jar target/tpcds-gen-1.0-SNAPSHOT.jar
+all: target/lib/dbgen.jar target/tpch-gen-1.0-SNAPSHOT.jar
 
-target/tpcds-gen-1.0-SNAPSHOT.jar: $(shell find -name *.java) 
+target/tpch-gen-1.0-SNAPSHOT.jar: $(shell find -name *.java) 
 	mvn package
 
-target/tpcds_kit.zip: tpcds_kit.zip
+target/tpch_kit.zip: tpch_kit.zip
 	mkdir -p target/
-	cp tpcds_kit.zip target/tpcds_kit.zip
+	cp tpch_kit.zip target/tpch_kit.zip
 
-tpcds_kit.zip:
-	curl --output tpcds_kit.zip http://www.tpc.org/tpcds/dsgen/dsgen-download-files.asp?download_key=NaN
+tpch_kit.zip:
+	curl --output tpch_kit.zip http://www.tpc.org/tpch/spec/tpch_2_16_0.zip
 
-target/lib/dsdgen.jar: target/tools/dsdgen
-	cd target/; mkdir -p lib/; jar cvf lib/dsdgen.jar tools/
+target/lib/dbgen.jar: target/tools/dbgen
+	cd target/; mkdir -p lib/; jar cvf lib/dbgen.jar tools/
 
-target/tools/dsdgen: target/tpcds_kit.zip
-	test -d target/tools/ || (cd target; unzip tpcds_kit.zip; cd tools; patch -p0 < ../../tpcds-strcpy.patch)
-	cd target/tools; make clean; make dsdgen
+target/tools/dbgen: target/tpch_kit.zip
+	test -d target/tools/ || (cd target; unzip tpch_kit.zip -x __MACOSX/; ln -sf $$PWD/*/dbgen/ tools)
+	cd target/tools/; make -f makefile.suite clean; make -f makefile.suite CC=gcc DATABASE=ORACLE MACHINE=LINUX WORKLOAD=TPCH
 
 clean:
 	mvn clean

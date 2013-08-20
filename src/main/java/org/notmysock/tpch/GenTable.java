@@ -1,4 +1,4 @@
-package org.notmysock.tpcds;
+package org.notmysock.tpch;
 
 import org.apache.hadoop.conf.*;
 import org.apache.hadoop.fs.*;
@@ -23,6 +23,31 @@ import java.security.*;
 
 
 public class GenTable extends Configured implements Tool {
+	
+	private static enum TableMappings {
+		ALL("all"),
+		CUSTOMERS("c"),
+		SUPPLIERS("s"),
+		NATION("l"),
+		ORDERS("o"),
+		PARTS("p");
+		
+		/*
+		-T c   -- generate cutomers ONLY
+		-T l   -- generate nation/region ONLY
+		-T o   -- generate orders/lineitem ONLY
+		-T p   -- generate parts/partsupp ONLY
+		-T s   -- generate suppliers ONLY
+		*/
+		
+		
+		final String option;
+		
+		TableMappings(String option) {
+			this.option = option;
+		}
+	}
+	
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
         int res = ToolRunner.run(conf, new GenTable(), args);
@@ -52,6 +77,7 @@ public class GenTable extends Configured implements Tool {
         String table = "all";
         if(line.hasOption("table")) {
           table = line.getOptionValue("table");
+          table = TableMappings.valueOf(table.toUpperCase()).option;
         }
         Path out = new Path(line.getOptionValue("dir"));
 
@@ -68,12 +94,12 @@ public class GenTable extends Configured implements Tool {
 
         Path in = genInput(table, scale, parallel);
 
-        Path dsdgen = copyJar(new File("target/lib/dsdgen.jar"));
-        URI dsuri = dsdgen.toUri();
+        Path dbgen = copyJar(new File("target/lib/dbgen.jar"));
+        URI dsuri = dbgen.toUri();
         URI link = new URI(dsuri.getScheme(),
                     dsuri.getUserInfo(), dsuri.getHost(), 
                     dsuri.getPort(),dsuri.getPath(), 
-                    dsuri.getQuery(),"dsdgen");
+                    dsuri.getQuery(),"dbgen");
         Configuration conf = getConf();
         conf.setInt("mapred.task.timeout",0);
         conf.setInt("mapreduce.task.timeout",0);
@@ -81,7 +107,7 @@ public class GenTable extends Configured implements Tool {
         Job job = new Job(conf, "GenTable+"+table+"_"+scale);
         job.setJarByClass(getClass());
         job.setNumReduceTasks(0);
-        job.setMapperClass(DSDGen.class);
+        job.setMapperClass(dbgen.class);
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(Text.class);
 
@@ -102,7 +128,7 @@ public class GenTable extends Configured implements Tool {
         FileSystem fs = FileSystem.get(getConf());
         
         fs.delete(in, false);
-        fs.delete(dsdgen, false);
+        fs.delete(dbgen, false);
 
         return 0;
     }
@@ -134,9 +160,9 @@ public class GenTable extends Configured implements Tool {
         FSDataOutputStream out = fs.create(in);
         for(int i = 1; i <= parallel; i++) {
           if(table.equals("all")) {
-            out.writeBytes(String.format("./dsdgen -dir $DIR -force Y -scale %d -parallel %d -child %d\n", scale, parallel, i));
+            out.writeBytes(String.format("$DIR/dbgen/tools/dbgen -b $DIR/dbgen/tools/dists.dss -f -s %d -C %d -S %d\n", scale, parallel, i));
           } else {
-            out.writeBytes(String.format("./dsdgen -dir $DIR -table %s -force Y -scale %d -parallel %d -child %d\n", table, scale, parallel, i));
+        	out.writeBytes(String.format("$DIR/dbgen/tools/dbgen -b $DIR/dbgen/tools/dists.dss -f -s %d -C %d -S %d -T %s\n", scale, parallel, i, table));           
           }
         }
         out.close();
@@ -157,7 +183,7 @@ public class GenTable extends Configured implements Tool {
       return sb.toString();
     }
 
-    static final class DSDGen extends Mapper<LongWritable,Text, Text, Text> {
+    static final class dbgen extends Mapper<LongWritable,Text, Text, Text> {
       private MultipleOutputs mos;
       protected void setup(Context context) throws IOException {
         mos = new MultipleOutputs(context);
@@ -173,18 +199,18 @@ public class GenTable extends Configured implements Tool {
         String[] cmd = command.toString().split(" ");
 
         for(int i=0; i<cmd.length; i++) {
-          if(cmd[i].equals("$DIR")) {
-            cmd[i] = (new File(".")).getAbsolutePath();
+          if(cmd[i].contains("$DIR")) {
+            cmd[i] = cmd[i].replace("$DIR",(new File(".")).getAbsolutePath());
           }
-          if(cmd[i].equals("-parallel")) {
+          if(cmd[i].equals("-C")) {
             parallel = cmd[i+1];
           }
-          if(cmd[i].equals("-child")) {
+          if(cmd[i].equals("-S")) {
             child = cmd[i+1];
           }
         }
 
-        Process p = Runtime.getRuntime().exec(cmd, null, new File("dsdgen/tools/"));
+        Process p = Runtime.getRuntime().exec(cmd, null, new File("."));
         int status = p.waitFor();
         if(status != 0) {
           String err = readToString(p.getErrorStream());
@@ -192,7 +218,7 @@ public class GenTable extends Configured implements Tool {
         }
 
         File cwd = new File(".");
-        final String suffix = String.format("_%s_%s.dat", child, parallel);
+        final String suffix = String.format(".tbl.%s", child);
 
         FilenameFilter tables = new FilenameFilter() {
           public boolean accept(File dir, String name) {
