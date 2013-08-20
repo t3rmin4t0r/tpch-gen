@@ -1,19 +1,19 @@
-Mapreduce TPC-DS Generator
-==========================
+Mapreduce TPC-H Generator
+=========================
 
-This simplifies creating tpc-ds data-sets on large scales on a hadoop cluster.
+This simplifies creating tpc-h data-sets on large scales on a hadoop cluster.
 
 To get set up, you need to run
 
 	$ make 
 
-this will download the TPC-DS dsgen program, compile it and use maven to build the MR app wrapped around it.
+this will download the TPC-h dbgen program, compile it and use maven to build the MR app wrapped around it.
 
 To generate the data-sets, you need to run (say, for scale = 200, parallelism = 100)
 
-	$ hadoop  jar target/tpcds-gen-1.0-SNAPSHOT.jar   -d /tmp/store_sales/200/ -p 100 -s 200 
+	$ hadoop  jar target/tpch-gen-1.0-SNAPSHOT.jar   -d /user/hive/external/200/ -p 100 -s 200 
 
-This uses the existing parallelism in the driver.c of TPC-DS without modification and uses it to run the command on multiple machines instead of running in local fork mode.
+This uses the existing parallelism in the dbgen program without modification and uses it to run the command on multiple machines.
 
 The command generates multiple files for each map task, resulting in each table having its own subdirectory.
 
