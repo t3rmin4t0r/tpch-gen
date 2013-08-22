@@ -222,16 +222,17 @@ public class GenTable extends Configured implements Tool {
 
         FilenameFilter tables = new FilenameFilter() {
           public boolean accept(File dir, String name) {
-            return name.endsWith(suffix);
+            return name.endsWith(suffix) || name.endsWith(".tbl");
           }
         };
 
         for(File f: cwd.listFiles(tables)) {
           BufferedReader br = new BufferedReader(new FileReader(f));          
           String line;
+          String name = f.getName().replace(suffix,"/data").replace(".tbl", "/data");
           while ((line = br.readLine()) != null) {
             // process the line.
-            mos.write("text", line, null, f.getName().replace(suffix,"/data"));
+            mos.write("text", line, null, name);
           }
           br.close();
           f.deleteOnExit();
