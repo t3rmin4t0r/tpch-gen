@@ -231,10 +231,11 @@ public class GenTable extends Configured implements Tool {
 
         File cwd = new File(".");
         final String suffix = String.format(".tbl.%s", child);
+        final boolean firstMapper = child.equals("1");
 
         FilenameFilter tables = new FilenameFilter() {
           public boolean accept(File dir, String name) {
-            return name.endsWith(suffix) || name.endsWith(".tbl");
+            return name.endsWith(suffix) || (name.endsWith(".tbl") && firstMapper);
           }
         };
 
