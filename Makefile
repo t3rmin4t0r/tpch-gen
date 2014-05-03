@@ -1,7 +1,7 @@
 
 all: target/lib/dbgen.jar target/tpch-gen-1.0-SNAPSHOT.jar
 
-target/tpch-gen-1.0-SNAPSHOT.jar: $(shell find -name *.java) 
+target/tpch-gen-1.0-SNAPSHOT.jar: $(shell find . -name *.java) 
 	mvn package
 
 target/tpch_kit.zip: tpch_kit.zip
