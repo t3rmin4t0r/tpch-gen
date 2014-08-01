@@ -2,9 +2,9 @@ set hive.stats.autogather=true;
 set hive.stats.dbclass=fs;
 
 create table if not exists lineitem 
-(L_ORDERKEY INT,
- L_PARTKEY INT,
- L_SUPPKEY INT,
+(L_ORDERKEY BIGINT,
+ L_PARTKEY BIGINT,
+ L_SUPPKEY BIGINT,
  L_LINENUMBER INT,
  L_QUANTITY DOUBLE,
  L_EXTENDEDPRICE DOUBLE,
@@ -33,7 +33,7 @@ create table if not exists part (P_PARTKEY INT,
 STORED AS ORC TBLPROPERTIES ("orc.compress"="SNAPPY")
 ;
 
-create table if not exists supplier (S_SUPPKEY INT,
+create table if not exists supplier (S_SUPPKEY BIGINT,
  S_NAME STRING,
  S_ADDRESS STRING,
  S_NATIONKEY INT,
@@ -43,8 +43,8 @@ create table if not exists supplier (S_SUPPKEY INT,
 STORED AS ORC TBLPROPERTIES ("orc.compress"="SNAPPY")
 ;
 
-create table if not exists partsupp (PS_PARTKEY INT,
- PS_SUPPKEY INT,
+create table if not exists partsupp (PS_PARTKEY BIGINT,
+ PS_SUPPKEY BIGINT,
  PS_AVAILQTY INT,
  PS_SUPPLYCOST DOUBLE,
  PS_COMMENT STRING)
@@ -64,7 +64,7 @@ create table if not exists region (R_REGIONKEY INT,
 STORED AS ORC TBLPROPERTIES ("orc.compress"="SNAPPY")
 ;
 
-create table if not exists customer (C_CUSTKEY INT,
+create table if not exists customer (C_CUSTKEY BIGINT,
  C_NAME STRING,
  C_ADDRESS STRING,
  C_NATIONKEY INT,
@@ -75,8 +75,8 @@ create table if not exists customer (C_CUSTKEY INT,
 STORED AS ORC TBLPROPERTIES ("orc.compress"="SNAPPY")
 ;
 
-create table if not exists orders (O_ORDERKEY INT,
- O_CUSTKEY INT,
+create table if not exists orders (O_ORDERKEY BIGINT,
+ O_CUSTKEY BIGINT,
  O_ORDERSTATUS STRING,
  O_TOTALPRICE DOUBLE,
  O_ORDERDATE STRING,
